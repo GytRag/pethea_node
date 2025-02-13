@@ -1,0 +1,235 @@
+const bcrypt = require("bcrypt");
+const jwt = require("jsonwebtoken");
+const doctorSchema = require("../schemas/doctorSchema");
+const petSchema = require("../schemas/petSchema");
+const logsSchema = require("../schemas/logsSchema");
+const presSchema = require("../schemas/presSchema");
+const medsSchema = require("../schemas/medsSchema");
+const userSchema = require("../schemas/userSchema");
+
+module.exports = {
+
+    register: async (req, res) => {
+
+        const {username, passOne} = req.body
+
+        const doctorExist = await doctorSchema.findOne({username})
+        if (doctorExist) return res.send({message: 'user exist', success: false})
+
+        const salt = await bcrypt.genSalt(5);
+        const hash = await bcrypt.hash(passOne, salt)
+
+        const doctor = {
+            name: username,
+            password: hash,
+            doctor: true
+        }
+
+        const newDoctor = new doctorSchema(doctor);
+        await newDoctor.save()
+
+        res.send({message: 'register ok', success: true});
+
+    },
+
+    login: async (req, res) => {
+
+        const {username, password} = req.body
+
+        const doctorExist = await doctorSchema.findOne({name: username})
+        if (!doctorExist) return res.send({message: 'incorrect username or password', success: false})
+
+        const result = await bcrypt.compare(password, doctorExist.password)
+
+        if (!result) return res.send({message: 'incorrect username or password', success: false})
+
+        let myUser = {...doctorExist._doc}
+        delete myUser.password
+
+        const token = jwt.sign(myUser, process.env.SECRET_KEY)
+
+        return res.send({message: 'login successful', success: true, token})
+
+    },
+
+    loginUser: async (req, res) => {
+
+        const {client_email, password} = req.body
+
+        const userExist = await userSchema.findOne({client_email})
+        if (!userExist) return res.send({message: 'incorrect username or password', success: false})
+
+        const result = await bcrypt.compare(password, userExist.password)
+
+        if (!result) return res.send({message: 'incorrect username or password', success: false})
+
+        let myUser = {...userExist._doc}
+        delete myUser.password
+
+        const token = jwt.sign(myUser, process.env.SECRET_KEY)
+
+        return res.send({message: 'login successful', success: true, token})
+
+    },
+
+    allPets: async (req, res) => {
+
+        const pets = await petSchema.find()
+        return res.send({message: 'all pets', success: true, pets})
+
+    },
+    allMeds: async (req, res) => {
+
+        const meds = await medsSchema.find()
+
+        return res.send({message: 'all meds', success: true, meds})
+    },
+
+    pet: async (req, res) => {
+
+        const id = req.params.id
+        const pet = await petSchema.findOne({_id: id})
+        const petLogs = await logsSchema.findOne({pet_id: id})
+        const petPres = await presSchema.findOne({pet_id: id})
+        return res.send({message: 'pet', success: true, pet, petLogs, petPres})
+    },
+
+    addPet: async (req, res) => {
+
+
+        const {name, client_email} = req.body
+
+        const existPet = await petSchema.findOne({name: name, client_email: client_email})
+        if(existPet) return res.send({message: 'pet exist', success: false})
+
+
+        const newPatient = {
+            name: req.body.name,
+            dob: req.body.dob,
+            client_email: req.body.client_email
+        }
+
+        const newPet = new petSchema(newPatient);
+        await newPet.save()
+
+        // add a new user by email if one does not exist
+        const existUser = await userSchema.findOne({client_email})
+        if(existUser) return res.send({message: 'pet added', success: true})
+
+        const salt = await bcrypt.genSalt(5);
+        const hash = await bcrypt.hash(client_email, salt)
+
+        const newUser = {
+            client_email,
+            password:hash
+        }
+
+        const addUser = new userSchema(newUser);
+        await addUser.save()
+
+        return res.send({message: 'pet && user added', success: true})
+    },
+    deletePet: async (req, res) => {
+
+        const {id} = req.body
+
+        const deletePet = await petSchema.findOneAndDelete({_id: id})
+        if(!deletePet) return res.send({message: 'pet not deleted', success: false})
+        await logsSchema.deleteMany({pet_id: id})
+        await presSchema.deleteMany({pet_id: id})
+
+        return res.send({message: 'pet deleted', success: true})
+    },
+
+    addMedication: async (req, res) => {
+        const {name, description} = req.body
+
+        const existMeds = await medsSchema.findOne({name: name})
+        if(existMeds) return res.send({message: 'medication exist', success: false})
+
+
+        const newMeds = {
+            name: name,
+            description: description
+        }
+
+        const newMedication = new medsSchema(newMeds);
+        await newMedication.save()
+
+        return res.send({message: 'medication added', success: true})
+    },
+
+    deleteMedication: async (req, res) => {
+        const id = req.params.id
+        const deleteMeds = await medsSchema.findOneAndDelete({_id: id})
+        return res.send({message: 'medication deleted', success: true})
+    },
+
+    editeMedication: async (req, res) => {
+        const id = req.params.id
+        const {name, description} = req.body
+
+        if(name && description) {
+            const editeMeds = await medsSchema.findOneAndUpdate(
+                {_id: id},{name, description},)
+            return res.send({message: 'medication edited', success: true})
+        }
+
+    },
+
+    addLog: async (req, res) => {
+
+        const {date, description, pet_id} = req.body
+
+
+        const newItem = {
+            description,
+            date,
+            pet_id
+        }
+
+        const newLog = new logsSchema(newItem);
+        await newLog.save()
+
+        return res.send({message: 'log added', success: true})
+    },
+
+    addPres: async (req, res) => {
+
+        const {date, description, pet_id} = req.body
+
+        const meds = await medsSchema.findOne({name: description})
+
+        const newItem = {
+            description,
+            date,
+            pet_id,
+            medication_id: meds._id
+        }
+
+        const newPres = new presSchema(newItem);
+        await newPres.save()
+
+        return res.send({message: 'prescription added', success: true})
+    },
+
+    allPresLogs: async (req, res) => {
+
+        const id = req.params.id
+
+        const pres = await presSchema.find({pet_id: id})
+        const logs = await logsSchema.find({pet_id: id})
+
+        return res.send({message: 'all pres logs', success: true, pres, logs})
+    },
+
+    myPets: async (req, res) => {
+
+        const {user} = req.body
+
+        const pets = await petSchema.find({client_email: user.client_email})
+
+        return res.send({message: 'my pets', success: true, pets})
+    },
+
+}

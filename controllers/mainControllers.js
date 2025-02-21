@@ -6,6 +6,9 @@ const logsSchema = require("../schemas/logsSchema");
 const presSchema = require("../schemas/presSchema");
 const medsSchema = require("../schemas/medsSchema");
 const userSchema = require("../schemas/userSchema");
+const gallerySchema = require("../schemas/gallerySchema");
+
+const mongoose = require('mongoose');
 
 module.exports = {
 
@@ -231,5 +234,35 @@ module.exports = {
 
         return res.send({message: 'my pets', success: true, pets})
     },
+
+    updatePassword: async (req, res) => {
+
+        const {passOne, user} = req.body
+
+        const salt = await bcrypt.genSalt(5);
+        const hash = await bcrypt.hash(passOne, salt)
+
+        if(user.doctor) {
+            await doctorSchema.findOneAndUpdate(
+                {_id: user._id},{$set: {password: hash}})
+        }
+
+        if(!user.doctor) {
+            await userSchema.findOneAndUpdate(
+                {_id: user._id},{$set: {password: hash}})
+        }
+
+        return res.send({message: 'password updated', success: true})
+
+
+    },
+
+    gallery: async (req, res) => {
+
+        const images = await gallerySchema.find()
+
+
+        return res.send({message: 'All gallery', success: true, images})
+    }
 
 }

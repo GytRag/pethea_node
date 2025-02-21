@@ -16,20 +16,24 @@ const {
     addPres,
     allPresLogs,
     loginUser,
-    myPets
+    myPets,
+    updatePassword,
+    gallery
 } = require('../controllers/mainControllers')
 
 const {
     validateRegister,
     validateLogin,
-    doctorValidator
+    doctorValidator,
+    passwordValidator
 } = require('../middleware/validators')
 
 const userAuth = require('../middleware/userAuth')
 
-router.post('/register',validateRegister, register)
+router.post('/register',validateRegister, passwordValidator, register)
 router.post('/login',validateLogin, login)
 router.post('/loginuser',validateLogin, loginUser)
+router.post('/updatepass',userAuth, passwordValidator, updatePassword)
 
 
 router.get('/pets',userAuth,doctorValidator, allPets)
@@ -37,6 +41,7 @@ router.get('/pets/:id',userAuth, pet)
 router.get('/meds',userAuth, allMeds)
 router.get('/preslogs/:id',userAuth, allPresLogs)
 router.get('/mypets',userAuth, myPets)
+router.get('/gallery', gallery)
 
 
 

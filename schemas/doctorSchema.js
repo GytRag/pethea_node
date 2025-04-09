@@ -14,6 +14,10 @@ const doctorSchema = new Schema({
         type: Boolean,
         required: true
     },
+    image: {
+        type: String,
+        default: 'https://spaces-cdn.clipsafari.com/qmk6djn2yt56xjuyk04p5plvzxbl'
+    },
 
 });
 

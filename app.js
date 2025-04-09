@@ -15,10 +15,14 @@ mongoose
     })
 
 
-app.use(cors());
+app.use(cors({
+    origin: '*', //'http://thecode.lt'
+    credentials: true
+}));
 app.use(express.json());
 
-app.use('/', mainRouter)
+// app.use('/api/pethea/', mainRouter)
+app.use('/pethea/', mainRouter)
 
-app.listen(2001);
-console.log('Server started on port 2001');
+app.listen(3021);
+console.log('Server started on port 3021');

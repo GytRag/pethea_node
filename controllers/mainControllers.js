@@ -46,12 +46,13 @@ module.exports = {
 
         if (!result) return res.send({message: 'incorrect username or password', success: false})
 
+
         let myUser = {...doctorExist._doc}
         delete myUser.password
 
         const token = jwt.sign(myUser, process.env.SECRET_KEY)
 
-        return res.send({message: 'login successful', success: true, token})
+        return res.send({success: true, token, myUser})
 
     },
 
@@ -263,6 +264,35 @@ module.exports = {
 
 
         return res.send({message: 'All gallery', success: true, images})
-    }
+    },
 
+    updateImage: async (req, res) => {
+
+        const {image, user} = req.body
+
+        if(image.length > 0) {
+            if(user.doctor) {
+                await doctorSchema.findOneAndUpdate(
+                    {_id: user._id},{$set: {image}})
+
+                let myUser = await doctorSchema.findOne({_id: user._id})
+                    delete myUser.password
+
+                res.send({message: 'image updated', success: true, myUser})
+            }
+        }
+
+        // if(!user.doctor) {
+        //     await userSchema.findOneAndUpdate(
+        //         {_id: user._id},{$set: {password: hash}})
+        // }
+
+    },
+
+    allDoctors: async (req, res) => {
+
+        const doctors = await doctorSchema.find({}, {password: 0})
+
+        return res.send({success: true, doctors})
+    },
 }

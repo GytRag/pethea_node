@@ -4,6 +4,7 @@ const cors = require('cors');
 const mainRouter = require('./router/routes');
 const mongoose = require("mongoose");
 require("dotenv").config();
+const path = require('path');
 
 mongoose
     .connect(process.env.MONGO_KEY)
@@ -21,8 +22,15 @@ app.use(cors({
 }));
 app.use(express.json());
 
-app.use('/api/pethea/', mainRouter)
-// app.use('/pethea/', mainRouter)
+// app.use('/api/pethea/', mainRouter)
+app.use('/pethea/', mainRouter)
+
+// Serve React App - Pethea (Frontend)
+app.use('/pethea', express.static(path.join(__dirname, 'pethea/build')));
+app.get('/pethea/*', (req, res) => {
+    res.sendFile(path.join(__dirname, 'pethea/build', 'index.html'));
+});
+
 
 app.listen(3021);
 console.log('Server started on port 3021');

@@ -35,6 +35,28 @@ module.exports = {
 
     },
 
+    registerUser: async (req, res) => {
+
+        const {email, passOne} = req.body
+
+        const userExist = await userSchema.findOne({client_email: email})
+        if (userExist) return res.send({message: 'user exist', success: false})
+
+        const salt = await bcrypt.genSalt(5);
+        const hash = await bcrypt.hash(passOne, salt)
+
+        const user = {
+            client_email: email,
+            password: hash
+        }
+
+        const newUser = new userSchema(user);
+        await newUser.save()
+
+        res.send({message: 'register ok', success: true});
+
+    },
+
     login: async (req, res) => {
 
         const {username, password} = req.body
@@ -72,7 +94,7 @@ module.exports = {
 
         const token = jwt.sign(myUser, process.env.SECRET_KEY)
 
-        return res.send({message: 'login successful', success: true, token})
+        return res.send({message: 'login successful', success: true, token, myUser})
 
     },
 
@@ -162,13 +184,11 @@ module.exports = {
 
         return res.send({message: 'medication added', success: true})
     },
-
     deleteMedication: async (req, res) => {
         const id = req.params.id
         const deleteMeds = await medsSchema.findOneAndDelete({_id: id})
         return res.send({message: 'medication deleted', success: true})
     },
-
     editeMedication: async (req, res) => {
         const id = req.params.id
         const {name, description} = req.body
@@ -197,7 +217,6 @@ module.exports = {
 
         return res.send({message: 'log added', success: true})
     },
-
     addPres: async (req, res) => {
 
         const {date, description, pet_id} = req.body
@@ -216,7 +235,6 @@ module.exports = {
 
         return res.send({message: 'prescription added', success: true})
     },
-
     allPresLogs: async (req, res) => {
 
         const id = req.params.id
@@ -270,22 +288,31 @@ module.exports = {
 
         const {image, user} = req.body
 
-        if(image.length > 0) {
-            if(user.doctor) {
-                await doctorSchema.findOneAndUpdate(
-                    {_id: user._id},{$set: {image}})
-
-                let myUser = await doctorSchema.findOne({_id: user._id})
+        if(user.doctor){
+            if(image.length > 0) {
+                if(user.doctor) {
+                    let myUser = await doctorSchema.findOneAndUpdate(
+                        {_id: user._id},
+                        {$set: {image}},
+                        {new:true}
+                        )
                     delete myUser.password
 
-                res.send({message: 'image updated', success: true, myUser})
+                    res.send({message: 'image updated', success: true, myUser})
+                }
             }
         }
 
-        // if(!user.doctor) {
-        //     await userSchema.findOneAndUpdate(
-        //         {_id: user._id},{$set: {password: hash}})
-        // }
+        if(!user.doctor) {
+            let myUser = await userSchema.findOneAndUpdate(
+                {_id: user._id},
+                {$set: {image}},
+                {new:true}
+            )
+            delete myUser.password
+
+            res.send({message: 'image updated', success: true, myUser})
+        }
 
     },
 

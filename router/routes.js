@@ -3,6 +3,7 @@ const router = express.Router();
 
 const {
     register,
+    registerUser,
     login,
     allPets,
     addPet,
@@ -27,12 +28,14 @@ const {
     validateRegister,
     validateLogin,
     doctorValidator,
-    passwordValidator
+    passwordValidator,
+    validateRegisterUser
 } = require('../middleware/validators')
 
 const userAuth = require('../middleware/userAuth')
 
 router.post('/register',validateRegister, passwordValidator, register)
+router.post('/registerUser',validateRegisterUser, passwordValidator, registerUser)
 router.post('/login',validateLogin, login)
 router.post('/loginuser',validateLogin, loginUser)
 router.post('/updatepass',userAuth, passwordValidator, updatePassword)

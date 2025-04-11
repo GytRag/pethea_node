@@ -9,19 +9,33 @@ module.exports = {
             message: 'username length must be between 4 and 20 characters',
             success: false
         })
-
-        // if (!validator.is_email_valid(email)) return res.send({message: 'wrong email address', success: false});
-
+        if (passOne.length < 4 || passOne.length > 20) return res.send({
+            message: 'password length must be between 4 and 20 characters',
+            success: false
+        })
+        if (passOne !== passTwo) return res.send({message: 'passwords do not match', success: false});
 
         if(special_code !== process.env.SPECIAL_CODE) return res.send({message: 'wrong special code', success: false});
 
+        next()
+    },
+
+    validateRegisterUser: (req, res, next) => {
+        const {email, passOne, passTwo} = req.body
+
+        if (!validator.is_email_valid(email)) return res.send({message: 'wrong email address', success: false});
+
+        if (passOne.length < 4 || passOne.length > 20) return res.send({
+            message: 'password length must be between 4 and 20 characters',
+            success: false
+        })
+        if (passOne !== passTwo) return res.send({message: 'passwords do not match', success: false});
 
         next()
     },
 
     validateLogin: (req, res, next) => {
         const {username, password} = req.body
-
 
         next()
     },

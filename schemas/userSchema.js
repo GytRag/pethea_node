@@ -9,7 +9,11 @@ const userSchema = new Schema({
     password: {
         type: String,
         required: true
-    }
+    },
+    image: {
+        type: String,
+        default: 'https://img.freepik.com/free-vector/user-blue-gradient_78370-4692.jpg'
+    },
 });
 
 const user = mongoose.model("users", userSchema);

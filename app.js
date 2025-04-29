@@ -16,7 +16,7 @@ mongoose
 
 
 app.use(cors({
-    origin: '*', //'https://thecode.lt'
+    origin: '*',//'https://thecode.lt',
     credentials: true
 }));
 app.use(express.json());

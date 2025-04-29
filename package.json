@@ -9,6 +9,7 @@
   "license": "ISC",
   "description": "",
   "dependencies": {
+    "@faker-js/faker": "^9.7.0",
     "bcrypt": "^5.1.1",
     "cors": "^2.8.5",
     "dotenv": "^16.4.7",
@@ -16,6 +17,6 @@
     "jsonwebtoken": "^9.0.2",
     "mongoose": "^8.10.0",
     "node-email-validation": "^1.0.4",
-    "nodemon": "^3.1.9"
+    "nodemon": "^3.1.10"
   }
 }

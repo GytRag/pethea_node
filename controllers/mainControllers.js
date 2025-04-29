@@ -1,5 +1,6 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
+const {faker} = require("@faker-js/faker")
 const doctorSchema = require("../schemas/doctorSchema");
 const petSchema = require("../schemas/petSchema");
 const logsSchema = require("../schemas/logsSchema");
@@ -10,8 +11,11 @@ const gallerySchema = require("../schemas/gallerySchema");
 
 const mongoose = require('mongoose');
 
+const products = [];
+
 module.exports = {
 
+    // REGISTER
     register: async (req, res) => {
 
         const {username, passOne} = req.body
@@ -34,7 +38,6 @@ module.exports = {
         res.send({message: 'register ok', success: true});
 
     },
-
     registerUser: async (req, res) => {
 
         const {email, passOne} = req.body
@@ -57,6 +60,7 @@ module.exports = {
 
     },
 
+    // LOGIN
     login: async (req, res) => {
 
         const {username, password} = req.body
@@ -77,7 +81,6 @@ module.exports = {
         return res.send({success: true, token, myUser})
 
     },
-
     loginUser: async (req, res) => {
 
         const {client_email, password} = req.body
@@ -98,6 +101,61 @@ module.exports = {
 
     },
 
+    // update users & doctors
+    updatePassword: async (req, res) => {
+
+        const {passOne, user} = req.body
+
+        const salt = await bcrypt.genSalt(5);
+        const hash = await bcrypt.hash(passOne, salt)
+
+        if(user.doctor) {
+            await doctorSchema.findOneAndUpdate(
+                {_id: user._id},{$set: {password: hash}})
+        }
+
+        if(!user.doctor) {
+            await userSchema.findOneAndUpdate(
+                {_id: user._id},{$set: {password: hash}})
+        }
+
+        return res.send({message: 'password updated', success: true})
+
+
+    },
+    updateImage: async (req, res) => {
+
+        const {image, user} = req.body
+
+        if(user.doctor){
+            if(image.length > 0) {
+                if(user.doctor) {
+                    let myUser = await doctorSchema.findOneAndUpdate(
+                        {_id: user._id},
+                        {$set: {image}},
+                        {new:true}
+                    )
+                    delete myUser.password
+
+                    res.send({message: 'image updated', success: true, myUser})
+                }
+            }
+        }
+
+        if(!user.doctor) {
+            let myUser = await userSchema.findOneAndUpdate(
+                {_id: user._id},
+                {$set: {image}},
+                {new:true}
+            )
+            delete myUser.password
+
+            res.send({message: 'image updated', success: true, myUser})
+        }
+
+    },
+
+    // pets
     allPets: async (req, res) => {
 
         const pets = await petSchema.find()
@@ -110,7 +168,14 @@ module.exports = {
 
         return res.send({message: 'all meds', success: true, meds})
     },
+    myPets: async (req, res) => {
 
+        const {user} = req.body
+
+        const pets = await petSchema.find({client_email: user.client_email})
+
+        return res.send({message: 'my pets', success: true, pets})
+    },
     pet: async (req, res) => {
 
         const id = req.params.id
@@ -119,7 +184,6 @@ module.exports = {
         const petPres = await presSchema.findOne({pet_id: id})
         return res.send({message: 'pet', success: true, pet, petLogs, petPres})
     },
-
     addPet: async (req, res) => {
 
 
@@ -167,6 +231,7 @@ module.exports = {
         return res.send({message: 'pet deleted', success: true})
     },
 
+    // medication
     addMedication: async (req, res) => {
         const {name, description} = req.body
 
@@ -201,6 +266,7 @@ module.exports = {
 
     },
 
+    // press & log
     addLog: async (req, res) => {
 
         const {date, description, pet_id} = req.body
@@ -245,81 +311,38 @@ module.exports = {
         return res.send({message: 'all pres logs', success: true, pres, logs})
     },
 
-    myPets: async (req, res) => {
-
-        const {user} = req.body
-
-        const pets = await petSchema.find({client_email: user.client_email})
-
-        return res.send({message: 'my pets', success: true, pets})
-    },
-
-    updatePassword: async (req, res) => {
-
-        const {passOne, user} = req.body
-
-        const salt = await bcrypt.genSalt(5);
-        const hash = await bcrypt.hash(passOne, salt)
-
-        if(user.doctor) {
-            await doctorSchema.findOneAndUpdate(
-                {_id: user._id},{$set: {password: hash}})
-        }
-
-        if(!user.doctor) {
-            await userSchema.findOneAndUpdate(
-                {_id: user._id},{$set: {password: hash}})
-        }
-
-        return res.send({message: 'password updated', success: true})
-
-
-    },
-
+    // index & gallery page
     gallery: async (req, res) => {
 
         const images = await gallerySchema.find()
-
-
         return res.send({message: 'All gallery', success: true, images})
     },
-
-    updateImage: async (req, res) => {
-
-        const {image, user} = req.body
-
-        if(user.doctor){
-            if(image.length > 0) {
-                if(user.doctor) {
-                    let myUser = await doctorSchema.findOneAndUpdate(
-                        {_id: user._id},
-                        {$set: {image}},
-                        {new:true}
-                        )
-                    delete myUser.password
-
-                    res.send({message: 'image updated', success: true, myUser})
-                }
-            }
-        }
-
-        if(!user.doctor) {
-            let myUser = await userSchema.findOneAndUpdate(
-                {_id: user._id},
-                {$set: {image}},
-                {new:true}
-            )
-            delete myUser.password
-
-            res.send({message: 'image updated', success: true, myUser})
-        }
-
-    },
-
-    allDoctors: async (req, res) => {
+    home: async (req, res) => {
 
         const doctors = await doctorSchema.find({}, {password: 0})
 
-        return res.send({success: true, doctors})
+        const img = [
+            'https://live.themewild.com/medion/assets/img/product/01.png',
+            'https://live.themewild.com/medion/assets/img/product/02.png',
+            'https://live.themewild.com/medion/assets/img/product/03.png',
+            'https://live.themewild.com/medion/assets/img/product/04.png',
+            'https://live.themewild.com/medion/assets/img/product/05.png'
+        ]
+
+        if (products.length === 0) {
+            for (let i = 0; i < img.length; i++) {
+                const product = {
+                    id: faker.string.uuid(),
+                    image: img[i],
+                    description: faker.commerce.productDescription(),
+                    title: faker.commerce.productName(),
+                    stars: 3,
+                    price: 200
+                }
+                products.push(product)
+            }
+        }
+
+        return res.send({success: true, doctors, products})
     },
 }

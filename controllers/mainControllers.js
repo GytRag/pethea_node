@@ -1,6 +1,5 @@
 const bcrypt = require("bcrypt");
 const jwt = require("jsonwebtoken");
-const {faker} = require("@faker-js/faker")
 const doctorSchema = require("../schemas/doctorSchema");
 const petSchema = require("../schemas/petSchema");
 const logsSchema = require("../schemas/logsSchema");
@@ -332,10 +331,10 @@ module.exports = {
         if (products.length === 0) {
             for (let i = 0; i < img.length; i++) {
                 const product = {
-                    id: faker.string.uuid(),
+                    id: "A" + i,
                     image: img[i],
-                    description: faker.commerce.productDescription(),
-                    title: faker.commerce.productName(),
+                    description: 'Some new product ' + i,
+                    title: 'Product ' + i,
                     stars: 3,
                     price: 200
                 }
